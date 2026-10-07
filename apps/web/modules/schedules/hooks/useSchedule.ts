@@ -91,7 +91,10 @@ export const useSchedule = ({
     // Prioritize slug over id, since slug is the first value we get available.
     // If we have a slug, we don't need to fetch the id.
     // TODO: are queries using eventTypeId faster? Even tho we lost time fetching the id with the slug.
-    ...(eventSlug ? { eventTypeSlug: eventSlug } : { eventTypeId: eventId ?? 0 }),
+    // Exception: team events, where the slug is not unique and the server's slug lookup isn't scoped to the team, so use the id.
+    ...(eventSlug && !(isTeamEvent && eventId)
+      ? { eventTypeSlug: eventSlug }
+      : { eventTypeId: eventId ?? 0 }),
     // @TODO: Old code fetched 2 days ago if we were fetching the current month.
     // Do we want / need to keep that behavior?
     startTime,
