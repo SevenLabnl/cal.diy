@@ -21,6 +21,8 @@ import {
 } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendOrSchedulePayload";
 import type { EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
+import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
+import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { HttpError } from "@calcom/lib/http-error";
 import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
@@ -191,12 +193,22 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
   // get webhooks
   const eventTrigger: WebhookTriggerEvents = "BOOKING_CANCELLED";
 
+  const teamId = await getTeamIdFromEventType({
+    eventType: {
+      team: { id: bookingToDelete.eventType?.team?.id ?? null },
+      parentId: bookingToDelete?.eventType?.parentId ?? null,
+    },
+  });
+  const triggerForUser = !teamId || (teamId && bookingToDelete.eventType?.parentId);
+  const organizerUserId = triggerForUser ? bookingToDelete.userId : null;
+  const orgId = await getOrgIdFromMemberOrTeamId({ memberId: organizerUserId, teamId });
+
   const subscriberOptions: GetSubscriberOptions = {
-    userId: bookingToDelete.userId,
+    userId: organizerUserId,
     eventTypeId: bookingToDelete.eventTypeId as number,
     triggerEvent: eventTrigger,
-    teamId: null,
-    orgId: undefined,
+    teamId,
+    orgId,
     oAuthClientId: platformClientId,
   };
 

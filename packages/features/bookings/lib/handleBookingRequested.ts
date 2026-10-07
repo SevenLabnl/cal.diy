@@ -26,6 +26,7 @@ export async function handleBookingRequested(args: {
       price: number;
       requiresConfirmation: boolean;
       title: string;
+      teamId?: number | null;
       metadata: Prisma.JsonValue;
     } | null;
     eventTypeId: number | null;
@@ -49,7 +50,7 @@ export async function handleBookingRequested(args: {
       userId: booking.userId,
       eventTypeId: booking.eventTypeId,
       triggerEvent: WebhookTriggerEvents.BOOKING_REQUESTED,
-      teamId: null,
+      teamId: booking.eventType?.teamId,
       orgId: undefined,
     });
 

@@ -261,7 +261,7 @@ const updateAttendees = async ({
 
 const getWebhooksService = async ({ platformClientId, booking }: GetWebhooksServiceArgs) => {
   const webhooks = await WebhookService.init({
-    teamId: null,
+    teamId: booking?.eventType?.teamId,
     userId: booking?.eventType?.userId,
     eventTypeId: booking?.eventType?.id,
     orgId: undefined,

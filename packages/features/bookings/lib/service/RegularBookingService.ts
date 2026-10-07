@@ -60,6 +60,8 @@ import { DEFAULT_GROUP_ID, ENABLE_ASYNC_TASKER } from "@calcom/lib/constants";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import { extractBaseEmail } from "@calcom/lib/extract-base-email";
+import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
+import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { HttpError } from "@calcom/lib/http-error";
 import { criticalLogger } from "@calcom/lib/logger.server";
 import { getPiiFreeCalendarEvent, getPiiFreeEventType } from "@calcom/lib/piiFreeData";
@@ -1458,12 +1460,17 @@ async function handler(
     length: dayjs(reqBody.end).diff(dayjs(reqBody.start), "minutes"),
   };
 
+  const teamId = await getTeamIdFromEventType({ eventType });
+  const triggerForUser = !teamId || (teamId && eventType.parentId);
+  const organizerUserId = triggerForUser ? organizerUser.id : null;
+  const orgId = await getOrgIdFromMemberOrTeamId({ memberId: organizerUserId, teamId });
+
   const subscriberOptions: GetSubscriberOptions = {
-    userId: organizerUser.id,
+    userId: organizerUserId,
     eventTypeId,
     triggerEvent: WebhookTriggerEvents.BOOKING_CREATED,
-    teamId: null,
-    orgId: null,
+    teamId,
+    orgId,
     oAuthClientId: platformClientId,
   };
 
@@ -1474,20 +1481,20 @@ async function handler(
   subscriberOptions.triggerEvent = eventTrigger;
 
   const subscriberOptionsMeetingEnded = {
-    userId: organizerUser.id,
+    userId: organizerUserId,
     eventTypeId,
     triggerEvent: WebhookTriggerEvents.MEETING_ENDED,
-    teamId: null,
-    orgId: null,
+    teamId,
+    orgId,
     oAuthClientId: platformClientId,
   };
 
   const subscriberOptionsMeetingStarted = {
-    userId: organizerUser.id,
+    userId: organizerUserId,
     eventTypeId,
     triggerEvent: WebhookTriggerEvents.MEETING_STARTED,
-    teamId: null,
-    orgId: null,
+    teamId,
+    orgId,
     oAuthClientId: platformClientId,
   };
 
@@ -2309,11 +2316,11 @@ async function handler(
       locale: language,
     });
     const subscriberOptionsPaymentInitiated: GetSubscriberOptions = {
-      userId: organizerUser.id,
+      userId: organizerUserId,
       eventTypeId,
       triggerEvent: WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED,
-      teamId: null,
-      orgId: null,
+      teamId,
+      orgId,
       oAuthClientId: platformClientId,
     };
     await handleWebhookTrigger({
@@ -2500,11 +2507,11 @@ async function handler(
           location: booking.location,
           uid: booking.uid,
         },
-        triggerForUser: true,
+        triggerForUser,
         organizerUser: { id: organizerUser.id },
         eventTypeId,
-        teamId: null,
-        orgId: null,
+        teamId,
+        orgId,
         isDryRun,
       });
     }

@@ -7,6 +7,8 @@ import { scheduleTrigger } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import sendPayload from "@calcom/features/webhooks/lib/sendOrSchedulePayload";
 import type { EventPayloadType, EventTypeInfo } from "@calcom/features/webhooks/lib/sendPayload";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
+import getOrgIdFromMemberOrTeamId from "@calcom/lib/getOrgIdFromMemberOrTeamId";
+import { getTeamIdFromEventType } from "@calcom/lib/getTeamIdFromEventType";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import type { TraceContext } from "@calcom/lib/tracing";
 import { distributedTracing } from "@calcom/lib/tracing/factory";
@@ -308,32 +310,39 @@ export async function handleConfirmation(args: {
     ];
   }
 
-  const triggerForUser = true;
-  const userId = booking.userId;
+  const teamId = await getTeamIdFromEventType({
+    eventType: {
+      team: { id: eventType?.teamId ?? null },
+      parentId: eventType?.parentId ?? null,
+    },
+  });
+  const triggerForUser = !teamId || (teamId && eventType?.parentId);
+  const userId = triggerForUser ? booking.userId : null;
+  const orgId = await getOrgIdFromMemberOrTeamId({ memberId: userId, teamId });
 
   try {
     const subscribersBookingCreated = await getWebhooks({
       userId,
       eventTypeId: booking.eventTypeId,
       triggerEvent: WebhookTriggerEvents.BOOKING_CREATED,
-      teamId: null,
-      orgId: null,
+      teamId,
+      orgId,
       oAuthClientId: platformClientParams?.platformClientId,
     });
     const subscribersMeetingStarted = await getWebhooks({
       userId,
       eventTypeId: booking.eventTypeId,
       triggerEvent: WebhookTriggerEvents.MEETING_STARTED,
-      teamId: null,
-      orgId: null,
+      teamId,
+      orgId,
       oAuthClientId: platformClientParams?.platformClientId,
     });
     const subscribersMeetingEnded = await getWebhooks({
       userId,
       eventTypeId: booking.eventTypeId,
       triggerEvent: WebhookTriggerEvents.MEETING_ENDED,
-      teamId: null,
-      orgId: null,
+      teamId,
+      orgId,
       oAuthClientId: platformClientParams?.platformClientId,
     });
 
@@ -386,8 +395,8 @@ export async function handleConfirmation(args: {
       triggerForUser,
       organizerUser: { id: booking.userId },
       eventTypeId: booking.eventTypeId,
-      teamId: null,
-      orgId: null,
+      teamId,
+      orgId,
       oAuthClientId: platformClientParams?.platformClientId,
     });
 
