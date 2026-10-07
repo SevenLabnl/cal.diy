@@ -34,8 +34,11 @@ import { VercelWebhookController } from "@/vercel-webhook.controller";
     }),
 
     RedisModule,
+    // ponytail: plain REDIS_URL with dual-stack DNS (Railway private networking is IPv6-only in legacy
+    // environments); upstream forced `?tls=true` in production. TLS Redis would need `redis: { tls: {} }`.
     BullModule.forRoot({
-      redis: `${process.env.REDIS_URL}${process.env.NODE_ENV === "production" ? "?tls=true" : ""}`,
+      url: process.env.REDIS_URL,
+      redis: { family: 0 },
     }),
     ThrottlerModule.forRootAsync({
       imports: [RedisModule],

@@ -13,7 +13,7 @@ export class RedisService implements OnModuleDestroy {
     const dbUrl = configService.get<string>("db.redisUrl", { infer: true });
     if (!dbUrl) throw new Error("Misconfigured Redis, halting.");
 
-    this.redis = new Redis(dbUrl);
+    this.redis = new Redis(dbUrl, { family: 0 });
 
     this.redis.on("error", (err) => {
       this.logger.error(`IoRedis connection error: ${err.message}`);
