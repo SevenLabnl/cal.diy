@@ -68,7 +68,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   return {
     props: {
-      // Slots for team events are always served by the web tRPC router (API v2 is not deployed)
+      // The web booker fetches team slots via the web tRPC router; it is not wired to API v2 (NEXT_PUBLIC_API_V2_URL unset)
       useApiV2: false,
       eventData: {
         eventTypeId,
