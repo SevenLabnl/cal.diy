@@ -18,13 +18,6 @@ import { jsonArrayFrom, jsonObjectFrom } from "kysely/helpers/postgres";
 import type { TrpcSessionUser } from "../../../types";
 import type { TGetInputSchema } from "./get.schema";
 
-class PermissionCheckService {
-  constructor(_prisma?: unknown) {}
-  async checkPermission(..._args: unknown[]) { return true; }
-  async hasPermission(..._args: unknown[]) { return true; }
-  async getTeamIdsWithPermission(..._args: unknown[]): Promise<number[]> { return []; }
-}
-
 type GetOptions = {
   ctx: {
     user: NonNullable<TrpcSessionUser>;
@@ -114,15 +107,15 @@ export async function getBookings({
   take: number;
   skip: number;
 }) {
-  const permissionCheckService = new PermissionCheckService();
+  // PBAC is removed in Cal.diy; use its role fallback: teams where the user is an accepted OWNER/ADMIN
+  // see bookings of the team's event types and members (Cal.com v6.2.0 behaviour).
   const fallbackRoles: MembershipRole[] = [MembershipRole.ADMIN, MembershipRole.OWNER];
-
-  const teamIdsWithBookingPermission = await permissionCheckService.getTeamIdsWithPermission({
-    userId: user.id,
-    permission: "booking.read",
-    fallbackRoles,
-    orgId: user.orgId ?? undefined,
-  });
+  const teamIdsWithBookingPermission = (
+    await prisma.membership.findMany({
+      where: { userId: user.id, accepted: true, role: { in: fallbackRoles } },
+      select: { teamId: true },
+    })
+  ).map((m) => m.teamId);
 
   // Only fetch user IDs from teams if we need to validate userIds filter
   // PERFORMANCE: We no longer need to fetch all emails/IDs for the main query since we use subqueries
