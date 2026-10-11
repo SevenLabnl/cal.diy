@@ -296,7 +296,11 @@ class GoogleCalendarService implements Calendar {
       }
 
       if (event && event.id && event.hangoutLink) {
-        await calendar.events.patch({
+        // The event already exists with its Meet link; this patch only copies the link into the
+        // description/location. Google answers it with a transient 403 rateLimitExceeded often enough
+        // that throwing here would drop the link from the booking (empty reference uid, no meetingUrl),
+        // so retry with backoff and, if it still fails, keep the created event instead of failing.
+        const patchRequest = {
           // Update the same event but this time we know the hangout link
           calendarId: selectedCalendar,
           eventId: event.id || "",
@@ -315,7 +319,22 @@ class GoogleCalendarService implements Calendar {
               uid: calEvent.uid,
             }),
           },
-        });
+        };
+        for (let attempt = 1; ; attempt++) {
+          try {
+            await calendar.events.patch(patchRequest);
+            break;
+          } catch (patchError) {
+            if (attempt === 3) {
+              this.log.warn(
+                "Could not add Meet link to google calendar event, keeping the created event",
+                safeStringify({ patchError, selectedCalendar, credentialId })
+              );
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          }
+        }
       }
 
       return {
