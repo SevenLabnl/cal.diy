@@ -26,7 +26,7 @@ export const ZUpdateInputSchema = z.object({
   isPrivate: z.boolean().optional(),
   hideBookATeamMember: z.boolean().optional(),
   hideTeamProfileLink: z.boolean().optional(),
-  rrResetInterval: z.enum(["DAY", "MONTH"]).optional(),
+  rrResetInterval: z.enum(["DAY", "MONTH"]).nullable().optional(),
   rrTimestampBasis: z.enum(["CREATED_AT", "START_TIME"]).optional(),
 });
 export type TUpdateInputSchema = z.infer<typeof ZUpdateInputSchema>;
