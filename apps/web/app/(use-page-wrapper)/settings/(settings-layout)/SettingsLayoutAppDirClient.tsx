@@ -278,6 +278,7 @@ const useTabs = ({
 }) => {
   const session = useSession();
   const { data: user } = trpc.viewer.me.get.useQuery({ includePasswordAdded: true });
+  const { data: teams } = trpc.viewer.teams.list.useQuery();
   const orgBranding = null as { id?: number; slug?: string; name?: string; logoUrl?: string | null } | null;
   const isAdmin = session.data?.user.role === UserPermissionRole.ADMIN;
 
@@ -366,14 +367,37 @@ const useTabs = ({
     });
 
     // check if name is in adminRequiredKeys
-    return processedTabs.filter((tab) => {
+    const visibleTabs = processedTabs.filter((tab) => {
       if (organizationRequiredKeys.includes(tab.name)) return !!orgBranding;
       if (tab.name === "other_teams" && !permissions?.canUpdateOrganization) return false;
 
       if (isAdmin) return true;
       return !adminRequiredKeys.includes(tab.name);
     });
-  }, [isAdmin, orgBranding, user, isDelegationCredentialEnabled, isPbacEnabled, permissions]);
+
+    const teamTabs: VerticalTabItemProps[] = [
+      {
+        name: "teams",
+        href: "/teams",
+        icon: "users",
+        children: [{ name: "add_a_team", href: "/settings/teams/new" }],
+      },
+      ...(teams ?? [])
+        .filter((team) => team.accepted)
+        .map((team) => ({
+          name: team.name,
+          href: `/settings/teams/${team.id}`,
+          avatar: getPlaceholderAvatar(team.logoUrl, team.name),
+          children: ["profile", "members", "appearance", "settings"].map((page) => ({
+            name: page,
+            href: `/settings/teams/${team.id}/${page}`,
+          })),
+        })),
+    ];
+    const accountIndex = visibleTabs.findIndex((tab) => tab.href === "/settings/my-account");
+    visibleTabs.splice(accountIndex + 1, 0, ...teamTabs);
+    return visibleTabs;
+  }, [isAdmin, orgBranding, user, teams, isDelegationCredentialEnabled, isPbacEnabled, permissions]);
 
   return processTabsMemod;
 };
@@ -453,7 +477,7 @@ const SettingsSidebarContainer = ({
                   as="p"
                   className="truncate font-medium text-sm text-subtle leading-5"
                   loadingClassName="ms-3">
-                  {t(tab.name)}
+                  {tab.avatar ? tab.name : t(tab.name)}
                 </Skeleton>
               </div>
             </div>
