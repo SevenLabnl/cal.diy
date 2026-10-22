@@ -4771,5 +4771,15 @@
   "user_updated_successfully": "User updated successfully.",
   "error_updating_user": "There was an error updating this user.",
   "please_reschedule": "Please reschedule.",
+  "team_left": "You have left the team",
+  "team_deleted": "Team deleted",
+  "team_invites_sent": "Invitations sent: {{count}}",
+  "team_url_taken": "This team URL is already taken",
+  "invalid_slug": "Invalid URL",
+  "user_already_invited_or_member": "This user is already invited or a member of the team",
+  "invitation_not_found": "Invitation not found",
+  "member_not_found": "Member not found",
+  "cannot_remove_last_owner": "A team must have at least one owner",
+  "FORBIDDEN": "You don't have permission to do this",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }
