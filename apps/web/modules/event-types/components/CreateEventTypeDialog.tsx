@@ -1,5 +1,6 @@
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import CreateEventTypeForm from "@calcom/features/eventtypes/components/CreateEventTypeForm";
+import { TeamEventTypeForm } from "@calcom/features/eventtypes/components/TeamEventTypeForm";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
 import type { EventType } from "@calcom/prisma/client";
@@ -66,15 +67,11 @@ const querySchema = z.object({
 export function CreateEventTypeDialog({ profileOptions }: { profileOptions: ProfileOption[] }) {
   const { t } = useLocale();
   const router = useRouter();
-  const orgBranding = null;
-
   const {
     data: { teamId, eventPage: pageSlug },
   } = useTypedQuery(querySchema);
 
   const teamProfile = profileOptions.find((profile) => profile.teamId === teamId);
-
-  const permissions = teamProfile?.permissions ?? { canCreateEventType: false };
 
   const onSuccessMutation = (eventType: EventType) => {
     router.replace(`/event-types/${eventType.id}${teamId ? "?tabName=team" : ""}`);
@@ -114,7 +111,19 @@ export function CreateEventTypeDialog({ profileOptions }: { profileOptions: Prof
         enableOverflow
         title={teamId ? t("add_new_team_event_type") : t("add_new_event_type")}
         description={t("new_event_type_to_book_description")}>
-        {teamId ? null : (
+        {teamId ? (
+          <TeamEventTypeForm
+            teamSlug={teamProfile?.slug}
+            teamId={teamId}
+            urlPrefix={urlPrefix}
+            isPending={createMutation.isPending}
+            form={form}
+            handleSubmit={(values) => {
+              createMutation.mutate(values);
+            }}
+            SubmitButton={SubmitButton}
+          />
+        ) : (
           <CreateEventTypeForm
             urlPrefix={urlPrefix}
             isPending={createMutation.isPending}

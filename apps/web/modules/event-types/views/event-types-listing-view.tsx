@@ -16,7 +16,7 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import classNames from "@calcom/ui/classNames";
 import { ArrowButton } from "@calcom/ui/components/arrow-button";
-import { UserAvatarGroup } from "@calcom/ui/components/avatar";
+import { Avatar, UserAvatarGroup } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { ButtonGroup } from "@calcom/ui/components/buttonGroup";
@@ -26,6 +26,7 @@ import {
   DropdownItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -930,11 +931,33 @@ const CTA = ({ profileOptions }: { profileOptions: ProfileOption[] }) => {
         }}
         placeholder={t("search")}
       />
-      <Button
-        data-testid="new-event-type"
-        href={`?dialog=new&eventPage=${profileOptions[0]?.slug ?? ""}`}>
-        {t("new")}
-      </Button>
+      {profileOptions.length > 1 ? (
+        <Dropdown>
+          <DropdownMenuTrigger asChild>
+            <Button data-testid="new-event-type" EndIcon="chevron-down">
+              {t("new")}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{t("create_event_on")}</DropdownMenuLabel>
+            {profileOptions.map((option) => (
+              <DropdownMenuItem key={`${option.teamId ?? "me"}`}>
+                <DropdownItem
+                  href={`?dialog=new&eventPage=${option.slug ?? ""}${option.teamId ? `&teamId=${option.teamId}` : ""}`}
+                  CustomStartIcon={<Avatar alt={option.label ?? ""} imageSrc={option.image} size="sm" />}>
+                  {option.label}
+                </DropdownItem>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </Dropdown>
+      ) : (
+        <Button
+          data-testid="new-event-type"
+          href={`?dialog=new&eventPage=${profileOptions[0]?.slug ?? ""}`}>
+          {t("new")}
+        </Button>
+      )}
       <CreateEventTypeDialog profileOptions={profileOptions} />
     </div>
   );
